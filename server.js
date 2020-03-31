@@ -108,7 +108,14 @@ function addDepartment(){
   };
 
 function addRoles(){
-    inquirer
+  var query = "SELECT * FROM department";
+      connection.query(query, function(err, res){
+        var currentdepartments = [];
+        for (var i = 0; i < res.length; i++){
+          currentdepartments.push(res[i].name);
+        };
+        console.log(currentdepartments);
+ inquirer
     .prompt([
       {
       name: "title",
@@ -121,24 +128,31 @@ function addRoles(){
         message: "What is the salary of this role?"
       },
       {
-        name: "id",
+        name: "department",
         type: "list",
         message: "What department do they belong to?",
-        choices: [
-          "1",
-          "2",
-          "3",
-          "4"
-        ]
+        choices: currentdepartments
       },
     ]).then(function(answer){
-      // console.log(answer);
+      console.log(answer);
+      var departmentID;
+      for (var i = 0; i < res.length; i++){
+      console.log("each department from DB", res[i]);
+        if(res[i].name === answer.department){
+          departmentID = res[i].id;
+        }
+      };
+      console.log(departmentID);
+
       var query = "INSERT INTO role(title, salary, department_id) VALUES (?, ?, ?)";
-      connection.query(query, [answer.title, answer.salary, answer.id], function(err, res){
+      connection.query(query, [answer.title, answer.salary, departmentID], function(err, res){
         console.log("Role added");
         start();
       });
     })
+
+      });
+
 }; 
 
 function addEmployee(){
@@ -178,18 +192,16 @@ function addEmployee(){
 
 
 
-
-
 // code I can't figure out 
 
   function updateEmployee(){
     var query = "Select first_name, last_name, role_id From employees";
     connection.query(query, function(err, resemployee){
-      // console.log(resemployee);
+      console.log(resemployee);
       var employeearray = []
-      for (i = 0; i < resemployee.legnth; i++){
-        console.log([i])
-        employeearray.push(resemployee[i].id);
+      for (i = 0; i < resemployee.length; i++){
+        // console.log([i])
+        employeearray.push(resemployee[i].first_name);
       }
       console.log(employeearray);
 
@@ -198,35 +210,54 @@ function addEmployee(){
           name: "employee",
           type: "list",
           message: "which employee would you like to update?",
-          choices: resemployee
+          choices: employeearray
         }
       ]).then(function(answer){
         console.log(answer);
+        updateEmployeerole(answer.employee);
       })
-
-      // var queryroles = "Select * From roles";
-      // connection.query(queryroles, function(err, resroles){
-      //   // console.table(resroles);
-
-      //   inquirer.prompt([
-      //     {
-      //       name: "employee",
-      //       type: "list",
-      //       message: "which employee would you like to update?",
-      //       choices: resemployee
-      //     },
-      //     {
-      //       name: "role",
-      //       type: "list",
-      //       message: "which role would you like to update them too?",
-      //       choices: resroles
-      //     }
-      //   ]).then(function(answers){
-      //       console.log(answers);
-      //   });
-
-      // });
 
     });
    
   }
+
+function updateEmployeerole(employeeName){
+ var queryroles = "Select * From role";
+      connection.query(queryroles, function(err, resroles){
+        console.log(resroles);
+        var rolesArray = []
+        for (i = 0; i < resroles.length; i++){
+          // console.log([i])
+          rolesArray.push(resroles[i].title);
+        }
+        console.log("Logging roles array ", rolesArray);
+        inquirer.prompt(
+          {
+            name: "role",
+            type: "list",
+            message: "which role would you like to update them too?",
+            choices: rolesArray
+          }
+        ).then(function(answers){
+            console.log(answers);
+            var updateQuery = "UPDATE employees SET role_id = ? WHERE first_name = ?";
+            var roleID;
+          for (var i = 0; i < resroles.length; i++){
+          console.log("each role from DB", resroles[i]);
+            if(resroles[i].title === answers.role){
+              roleID = resroles[i].id;
+          }
+          };
+          console.log(roleID);
+
+            connection.query(updateQuery, [roleID, employeeName], function(err, res){
+              console.log(err,res);
+            })
+        });
+
+      });
+}
+
+     
+
+
